@@ -19,10 +19,14 @@ public extension StoryboardInstantiatable {
 }
 
 public extension StoryboardInstantiatable where Self: UIViewController {
-  static func instantiate() -> Self {
-    guard let vc = storyboard.instantiateInitialViewController() as? Self else {
-      fatalError("The VC is not of a class \(self)")
+    static var defaultFileName: String {
+        return NSStringFromClass(Self.self).components(separatedBy: ".").last!
     }
+    
+  static func instantiate() -> Self {
+      guard let vc = storyboard.instantiateViewController(withIdentifier: defaultFileName) as? Self else {
+                      fatalError("Cannot instantiate initial view controller \(Self.self) from storyboard with name \(defaultFileName)")
+      }
     return vc
   }
 }

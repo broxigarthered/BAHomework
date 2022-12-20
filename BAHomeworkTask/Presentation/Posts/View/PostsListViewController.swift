@@ -7,25 +7,24 @@
 
 import UIKit
 
-class PostsListViewController: UIViewController {
-
+class PostsListViewController: UIViewController, StoryboardInstantiatable {
+    
     @IBOutlet weak var tableView: UITableView!
     var viewModel: PostsListViewModel!
     let refreshControl = UIRefreshControl()
+    var networker: Networker?
+    var decoder: JSONDecoder?
+    var dispatchGroup: DispatchGroup?
+    
+    static func create(with viewModel: PostsListViewModel) -> PostsListViewController {
+        let view = PostsListViewController.instantiate()
+        view.viewModel = viewModel
+        
+        return view
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let session = URLSession.shared
-        let networker = Networker(session: session)
-        let defaultPostsRepo = DefaultPostsRepository(networker: networker)
-        let defaultUserDetailsRepo = DefaultUserDetailsRepository(networker: networker)
-        let decoder = JSONDecoder()
-        let dispatchGroup = DispatchGroup()
-        viewModel = PostsListViewModel(postsRepo: defaultPostsRepo,
-                                           userDetailsRepo: defaultUserDetailsRepo,
-                                           decoder: decoder,
-                                           dispatchGroup: dispatchGroup)
-        
         setupView()
         bind(to: viewModel)
         
@@ -54,13 +53,15 @@ class PostsListViewController: UIViewController {
     
     private func bind(to viewModel: PostsListViewModel) {
         viewModel.error.observe(on: self) { [weak self] message in
-            self?.showAlert(wtih: message)
+            if !message.isEmpty {
+                self?.showAlert(wtih: message)
+            }
         }
         viewModel.posts.observe(on: self) { [weak self] posts in
             self?.updateItems()
         }
     }
-
+    
     private func updateItems() {
         tableView.reloadData()
         refreshControl.endRefreshing()
